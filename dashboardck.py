@@ -71,22 +71,27 @@ conservative = ['Pharmaceuticals', 'Health Care Equipment & Services', 'Utilitie
                 'Food Products', 'Beverages', 'Household Products', 'Banks']
 
 # Phân loại khẩu vị rủi ro
+# Phân loại khẩu vị rủi ro
 def classify(row):
-    score_aggressive = sum([
-        row['ROE'] > 15,
-        row['Beta 5 Year'] > 1.0,
-        row['P/E'] > 20,
-        row['GICS Industry Name'] in aggressive
-    ])
-    if score_aggressive >= 3:
-        return "Tích cực"
+    # Tích cực: ROE > 15% là BẮT BUỘC + ít nhất 2 trong 3 tiêu chí còn lại
+    if row['ROE'] > 15:
+        score_remaining = sum([
+            row['Beta 5 Year'] > 1.0,
+            row['P/E'] > 20,
+            row['GICS Industry Name'] in aggressive
+        ])
+        if score_remaining >= 2:
+            return "Tích cực"
     
+    # Bảo thủ: các điều kiện bắt buộc (AND)
     elif (row['Company Market Capitalization'] > 25_000_000_000_000 and
           row['Dividend Yield - Common - Net - Issue - %, TTM'] > 1.5 and
-          row['Beta 5 Year'] < 1.2 and row['ROE'] > 10 and
+          row['Beta 5 Year'] < 1.2 and
+          row['ROE'] > 10 and
           row['GICS Industry Name'] in conservative):
         return "Bảo thủ"
     
+    # Cân bằng: điểm số ít nhất 2/4 tiêu chí
     else:
         score = sum([
             row['ROE'] > 12,
@@ -100,7 +105,6 @@ if 'Khau_Vi_Rui_Ro' not in fund_df.columns:
     fund_df = fund_df.dropna(subset=['ROE', 'Beta 5 Year', 'P/E', 'GICS Industry Name',
                                      'Dividend Yield - Common - Net - Issue - %, TTM'])
     fund_df['Khau_Vi_Rui_Ro'] = fund_df.apply(classify, axis=1)
-
 # Hàm tính hiệu quả
 def expected_return(weights, log_returns):
     return np.sum(log_returns.mean() * weights) * 252 * 100
