@@ -99,7 +99,7 @@ def classify(row):
     if score_aggressive >= 3:
         return "Tích cực"
 
-    elif (row['Company Market Capitalization'] > 25_000_000_000_000 and
+    elif (row['Company Market Capitalization'] > 25_000_000_000 and
           row['Dividend Yield - Common - Net - Issue - %, TTM'] > 1.5 and
           row['Beta 5 Year'] < 1.2 and row['ROE'] > 10 and
           row['GICS Industry Name'] in conservative):
