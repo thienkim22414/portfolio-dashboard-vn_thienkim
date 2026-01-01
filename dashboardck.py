@@ -71,32 +71,28 @@ conservative = ['Pharmaceuticals', 'Health Care Equipment & Services', 'Utilitie
                 'Food Products', 'Beverages', 'Household Products', 'Banks']
 
 # Phân loại khẩu vị rủi ro
-# Phân loại khẩu vị rủi ro
-# Phân loại khẩu vị rủi ro
 def classify(row):
-    # Tích cực: ROE > 15% và ngành aggressive là BẮT BUỘC
-    # + ít nhất 1 trong 2: Beta > 1.0 hoặc P/E > 20
-    if (row['ROE'] > 15 and 
-        row['GICS Industry Name'] in aggressive and
-        (row['Beta 5 Year'] > 1.0 or row['P/E'] > 18)):
-        return "Tích cực"
+    industry = row['GICS Industry Name']
     
-    # Bảo thủ: 3 bắt buộc + ít nhất 2 trong 3 bổ sung
-    if (row['Company Market Capitalization'] > 25_000_000_000 and 
-        row['Dividend Yield - Common - Net - Issue - %, TTM'] > 1.5 and
-        row['GICS Industry Name'] in ['Pharmaceuticals', 'Health Care Equipment & Services', 'Utilities', 
-                                      'Independent Power and Renewable Electricity Producers', 
-                                      'Food Products', 'Beverages', 'Household Products']):
-        
-        score_supplement = sum([
-            row['Beta 5 Year'] < 1.0,
-            row['ROE'] > 10,
-            10 <= row['P/E'] <= 20
+    # 1. Tích cực: ngành aggressive + điểm số tài chính cao
+    if industry in aggressive:
+        score = sum([
+            row['ROE'] > 15,
+            row['Beta 5 Year'] > 1.0,
+            row['P/E'] > 20
         ])
-        if score_supplement >= 1:
+        if score >= 2:  # ít nhất 2/3 tiêu chí tài chính
+            return "Tích cực"
+    
+    # 2. Bảo thủ: ngành conservative + điều kiện nghiêm ngặt
+    elif industry in conservative:
+        if (row['Company Market Capitalization'] > 25_000_000_000_000 and
+            row['Dividend Yield - Common - Net - Issue - %, TTM'] > 1.5 and
+            row['Beta 5 Year'] < 1.2 and
+            row['ROE'] > 10):
             return "Bảo thủ"
     
-    # Cân bằng: điểm số ít nhất 2/4 tiêu chí
+    # 3. Cân bằng: các ngành còn lại (hoặc balanced_industries) + điểm số trung bình
     else:
         score = sum([
             row['ROE'] > 12,
@@ -104,12 +100,16 @@ def classify(row):
             row['Dividend Yield - Common - Net - Issue - %, TTM'] > 1.0,
             row['P/E'] > 12
         ])
-        return "Cân bằng" if score >= 2 else "Khác"
+        if score >= 2:
+            return "Cân bằng"
+    
+    return "Khác"
 
 if 'Khau_Vi_Rui_Ro' not in fund_df.columns:
     fund_df = fund_df.dropna(subset=['ROE', 'Beta 5 Year', 'P/E', 'GICS Industry Name',
                                      'Dividend Yield - Common - Net - Issue - %, TTM', 'Company Market Capitalization'])
     fund_df['Khau_Vi_Rui_Ro'] = fund_df.apply(classify, axis=1)
+
 # Hàm tính hiệu quả
 def expected_return(weights, log_returns):
     return np.sum(log_returns.mean() * weights) * 252 * 100
