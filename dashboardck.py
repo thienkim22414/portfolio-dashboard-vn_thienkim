@@ -114,7 +114,7 @@ def classify(row):
             row['P/E'] > 12
         ])
         return "Cân bằng" if score >= 2 else "Khác"
- này hợp lí thị trường vn k
+
 # Hàm tính hiệu quả
 def expected_return(weights, log_returns):
     return np.sum(log_returns.mean() * weights) * 252 * 100
