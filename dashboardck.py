@@ -5,30 +5,23 @@ from scipy.optimize import minimize
 import plotly.express as px
 import plotly.graph_objects as go
 
+# Load dữ liệu bluechip
 @st.cache_data
 def load_data():
     fund = pd.read_csv("FUNDAMENTAL_FOR_PORTFOLIO.csv")
     
-    # Đọc CSV với xử lý dấu ngoặc kép bao header
-    price = pd.read_csv(
-        "PRICE_FOR_PORTFOLIO.csv",
-        header=None,             # Không dùng header tự động
-        skiprows=1,              # Bỏ dòng đầu (header bị bao ngoặc kép)
-        quoting=1,               # QUOTE_MINIMAL
-        quotechar='"',
-        doublequote=True
-    )
+    # Đọc price CSV với xử lý dấu ngoặc kép bao header
+    price = pd.read_csv("PRICE_FOR_PORTFOLIO.csv", quoting=1, quotechar='"', doublequote=True)
     
-    # Gán header thủ công
-    price.columns = ['Date', 'Symbol', 'Open', 'High', 'Low', 'Close', 'Volume']
-    
-    # Chuyển cột Date thành datetime
-    price['DATE'] = pd.to_datetime(price['Date'])
-    
-    # In header để kiểm tra (xóa sau khi chạy ổn)
-    st.write("Header price CSV sau khi sửa:", price.columns.tolist())
+    if 'Date' in price.columns:
+        price['DATE'] = pd.to_datetime(price['Date'])
+    else:
+        st.error(f"Không tìm thấy cột 'Date'! Header hiện tại: {price.columns.tolist()}")
+        st.stop()
     
     return fund, price
+
+fund_df, price_df = load_data()
 
 # Xử lý dữ liệu giá
 price_df = price_df.drop_duplicates(subset=['DATE', 'Symbol'])
@@ -112,6 +105,34 @@ def optimize_portfolio(log_returns_query, risk_free_rate):
                                  initial_weights, method='SLSQP', constraints=constraints, bounds=bounds)
     return optimized_results.x if optimized_results.success else initial_weights
 
+# Load benchmark
+@st.cache_data
+def load_benchmark():
+    files = {
+        'VN-Index': "Dữ liệu Lịch sử VN Index.csv",
+        'VN30': "Dữ liệu Lịch sử VN 30.csv",
+        'VN100': "Dữ liệu Lịch sử VN100.csv"
+    }
+    
+    benchmarks = {}
+    for name, file in files.items():
+        try:
+            df = pd.read_csv(file, quoting=1, quotechar='"', doublequote=True)
+            df['Ngày'] = pd.to_datetime(df['Ngày'], format='%d/%m/%Y')
+            df = df.sort_values('Ngày')
+            df['Close'] = pd.to_numeric(df['Lần cuối'].str.replace(',', ''))
+            df['log_return'] = np.log(df['Close'] / df['Close'].shift(1))
+            log_r = df['log_return'].dropna()
+            ret = log_r.mean() * 252 * 100
+            vol = log_r.std() * np.sqrt(252) * 100
+            sharpe = (ret/100 - 0.0418) / (vol/100) if vol > 0 else 0
+            benchmarks[name] = (round(ret, 1), round(vol, 1), round(sharpe, 2))
+        except Exception as e:
+            benchmarks[name] = (0, 0, 0)  # Nếu lỗi file, bỏ qua benchmark
+    return benchmarks
+
+benchmarks = load_benchmark()
+
 # Risk-free rate
 risk_free_rate = 0.0418
 st.sidebar.success("Risk-free rate VN (TPCP 10 năm): 4.18% (dữ liệu 30/12/2025)")
@@ -175,6 +196,26 @@ else:
         fig = go.Figure()
         fig.add_trace(go.Scatter(x=portfolio_cumulative.index, y=portfolio_cumulative, name="Danh mục tối ưu", line=dict(color="#1f77b4", width=2.5)))
         fig.update_layout(title="Lợi nhuận tích lũy danh mục tối ưu", xaxis_title="Ngày", yaxis_title="Lợi nhuận tích lũy", height=500)
+        st.plotly_chart(fig, use_container_width=True)
+
+        # So sánh benchmark
+        st.markdown("<h2 style='color: #ff7f0e;'>So sánh với Benchmark (2020-2025)</h2>", unsafe_allow_html=True)
+        comparison_data = [
+            {"Nhóm": khau_vi, "Return (%)": optimal_return, "Vol (%)": optimal_vol, "Sharpe": optimal_sharpe},
+            {"Nhóm": "VN-Index", "Return (%)": benchmarks.get('VN-Index', (0,0,0))[0], "Vol (%)": benchmarks.get('VN-Index', (0,0,0))[1], "Sharpe": benchmarks.get('VN-Index', (0,0,0))[2]},
+            {"Nhóm": "VN30", "Return (%)": benchmarks.get('VN30', (0,0,0))[0], "Vol (%)": benchmarks.get('VN30', (0,0,0))[1], "Sharpe": benchmarks.get('VN30', (0,0,0))[2]},
+            {"Nhóm": "VN100", "Return (%)": benchmarks.get('VN100', (0,0,0))[0], "Vol (%)": benchmarks.get('VN100', (0,0,0))[1], "Sharpe": benchmarks.get('VN100', (0,0,0))[2]},
+        ]
+        df_comp = pd.DataFrame(comparison_data)
+        st.dataframe(df_comp.style.highlight_max(subset=['Sharpe'], color='lightgreen'))
+
+        fig = go.Figure()
+        for row in comparison_data:
+            color = 'red' if row['Nhóm'] == khau_vi else 'gray'
+            size = 20 if row['Nhóm'] == khau_vi else 10
+            fig.add_trace(go.Scatter(x=[row['Vol (%)']], y=[row['Return (%)']], mode='markers+text',
+                                     marker=dict(size=size, color=color), text=row['Nhóm'], textposition="top center"))
+        fig.update_layout(title="So sánh Return vs Risk", xaxis_title="Biến động (%)", yaxis_title="Lợi nhuận kỳ vọng (%)")
         st.plotly_chart(fig, use_container_width=True)
 
 # Dark mode CSS
