@@ -9,18 +9,19 @@ import plotly.graph_objects as go
 def load_data():
     fund = pd.read_csv("FUNDAMENTAL_FOR_PORTFOLIO.csv")
     
-    # Sửa để đọc CSV có dấu ngoặc kép bao header
+    # Đọc CSV có dấu ngoặc kép bao header
     price = pd.read_csv(
         "PRICE_FOR_PORTFOLIO.csv",
-        quoting=1,               # QUOTE_MINIMAL: chỉ quote khi cần
-        quotechar='"',           # Dấu ngoặc kép là quote char
-        doublequote=True,        # Xử lý "" thành "
-        header=0                 # Header ở dòng 0
+        quoting=1,               # QUOTE_MINIMAL
+        quotechar='"',
+        doublequote=True,
+        header=0
     )
     
-    # Kiểm tra header sau khi đọc (để chắc chắn)
-    st.write("Header price CSV sau khi đọc:", price.columns.tolist())  # Xóa dòng này sau khi chạy ổn
+    # In header để kiểm tra (em có thể xóa sau khi chạy ổn)
+    st.write("Header price CSV sau khi đọc:", price.columns.tolist())
     
+    # Kiểm tra cột ngày
     if 'Date' in price.columns:
         price['DATE'] = pd.to_datetime(price['Date'])
     else:
@@ -28,6 +29,8 @@ def load_data():
         st.stop()
     
     return fund, price
+
+fund_df, price_df = load_data()
 
 # Xử lý dữ liệu giá
 price_df = price_df.drop_duplicates(subset=['DATE', 'Symbol'])
