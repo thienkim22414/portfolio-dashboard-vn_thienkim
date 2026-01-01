@@ -9,28 +9,26 @@ import plotly.graph_objects as go
 def load_data():
     fund = pd.read_csv("FUNDAMENTAL_FOR_PORTFOLIO.csv")
     
-    # Đọc CSV có dấu ngoặc kép bao header
+    # Đọc CSV với xử lý dấu ngoặc kép bao header
     price = pd.read_csv(
         "PRICE_FOR_PORTFOLIO.csv",
+        header=None,             # Không dùng header tự động
+        skiprows=1,              # Bỏ dòng đầu (header bị bao ngoặc kép)
         quoting=1,               # QUOTE_MINIMAL
         quotechar='"',
-        doublequote=True,
-        header=0
+        doublequote=True
     )
     
-    # In header để kiểm tra (em có thể xóa sau khi chạy ổn)
-    st.write("Header price CSV sau khi đọc:", price.columns.tolist())
+    # Gán header thủ công
+    price.columns = ['Date', 'Symbol', 'Open', 'High', 'Low', 'Close', 'Volume']
     
-    # Kiểm tra cột ngày
-    if 'Date' in price.columns:
-        price['DATE'] = pd.to_datetime(price['Date'])
-    else:
-        st.error(f"Không tìm thấy cột 'Date'! Header hiện tại: {price.columns.tolist()}")
-        st.stop()
+    # Chuyển cột Date thành datetime
+    price['DATE'] = pd.to_datetime(price['Date'])
+    
+    # In header để kiểm tra (xóa sau khi chạy ổn)
+    st.write("Header price CSV sau khi sửa:", price.columns.tolist())
     
     return fund, price
-
-fund_df, price_df = load_data()
 
 # Xử lý dữ liệu giá
 price_df = price_df.drop_duplicates(subset=['DATE', 'Symbol'])
