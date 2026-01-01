@@ -72,24 +72,29 @@ conservative = ['Pharmaceuticals', 'Health Care Equipment & Services', 'Utilitie
 
 # Phân loại khẩu vị rủi ro
 # Phân loại khẩu vị rủi ro
+# Phân loại khẩu vị rủi ro
 def classify(row):
-    # Tích cực: ROE > 15% là BẮT BUỘC + ít nhất 2 trong 3 tiêu chí còn lại
-    if row['ROE'] > 15:
-        score_remaining = sum([
-            row['Beta 5 Year'] > 1.0,
-            row['P/E'] > 20,
-            row['GICS Industry Name'] in aggressive
-        ])
-        if score_remaining >= 2:
-            return "Tích cực"
+    # Tích cực: ROE > 15% và ngành aggressive là BẮT BUỘC
+    # + ít nhất 1 trong 2: Beta > 1.0 hoặc P/E > 20
+    if (row['ROE'] > 15 and 
+        row['GICS Industry Name'] in aggressive and
+        (row['Beta 5 Year'] > 1.0 or row['P/E'] > 20)):
+        return "Tích cực"
     
-    # Bảo thủ: các điều kiện bắt buộc (AND)
-    elif (row['Company Market Capitalization'] > 25_000_000_000_000 and
-          row['Dividend Yield - Common - Net - Issue - %, TTM'] > 1.5 and
-          row['Beta 5 Year'] < 1.2 and
-          row['ROE'] > 10 and
-          row['GICS Industry Name'] in conservative):
-        return "Bảo thủ"
+    # Bảo thủ: 3 bắt buộc + ít nhất 2 trong 3 bổ sung
+    if (row['Company Market Capitalization'] > 10_000_000_000 * 23000 and  # 10 tỷ USD ~ 230,000 tỷ VND (tỷ giá ~23,000)
+        row['Dividend Yield - Common - Net - Issue - %, TTM'] > 3 and
+        row['GICS Industry Name'] in ['Pharmaceuticals', 'Health Care Equipment & Services', 'Utilities', 
+                                      'Independent Power and Renewable Electricity Producers', 
+                                      'Food Products', 'Beverages', 'Household Products']):
+        
+        score_supplement = sum([
+            row['Beta 5 Year'] < 0.8,
+            row['ROE'] > 15,
+            10 <= row['P/E'] <= 20
+        ])
+        if score_supplement >= 2:
+            return "Bảo thủ"
     
     # Cân bằng: điểm số ít nhất 2/4 tiêu chí
     else:
@@ -103,7 +108,7 @@ def classify(row):
 
 if 'Khau_Vi_Rui_Ro' not in fund_df.columns:
     fund_df = fund_df.dropna(subset=['ROE', 'Beta 5 Year', 'P/E', 'GICS Industry Name',
-                                     'Dividend Yield - Common - Net - Issue - %, TTM'])
+                                     'Dividend Yield - Common - Net - Issue - %, TTM', 'Company Market Capitalization'])
     fund_df['Khau_Vi_Rui_Ro'] = fund_df.apply(classify, axis=1)
 # Hàm tính hiệu quả
 def expected_return(weights, log_returns):
