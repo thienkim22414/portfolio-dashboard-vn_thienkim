@@ -89,11 +89,11 @@ def classify(row):
                                       'Food Products', 'Beverages', 'Household Products']):
         
         score_supplement = sum([
-            row['Beta 5 Year'] < 0.8,
+            row['Beta 5 Year'] < 1.0,
             row['ROE'] > 10,
             10 <= row['P/E'] <= 20
         ])
-        if score_supplement >= 2:
+        if score_supplement >= 1:
             return "Bảo thủ"
     
     # Cân bằng: điểm số ít nhất 2/4 tiêu chí
