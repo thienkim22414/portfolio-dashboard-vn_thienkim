@@ -10,17 +10,27 @@ import plotly.graph_objects as go
 def load_data():
     fund = pd.read_csv("FUNDAMENTAL_FOR_PORTFOLIO.csv")
     
-    # Đọc CSV bỏ header bị bao ngoặc kép
-    price = pd.read_csv("PRICE_FOR_PORTFOLIO.csv", header=None, skiprows=1)
+    # Đọc toàn bộ file như text để xử lý header bị bao ngoặc kép
+    with open("PRICE_FOR_PORTFOLIO.csv", "r", encoding="utf-8") as f:
+        lines = f.readlines()
     
-    # Gán header thủ công
+    # Bỏ dòng header bị bao ngoặc kép (dòng đầu)
+    data_lines = lines[1:]  # Bỏ dòng 1
+    
+    # Tạo DataFrame từ dữ liệu
+    from io import StringIO
+    data_str = ''.join(data_lines)
+    price = pd.read_csv(StringIO(data_str), header=None)
+    
+    # Gán header thủ công (7 cột)
     price.columns = ['Date', 'Symbol', 'Open', 'High', 'Low', 'Close', 'Volume']
     
     # Chuyển cột Date thành datetime
     price['DATE'] = pd.to_datetime(price['Date'])
     
-    # Kiểm tra header (xóa dòng này sau khi chạy ổn)
+    # In header để kiểm tra (xóa sau khi chạy ổn)
     st.write("Header price CSV sau khi sửa:", price.columns.tolist())
+    st.write("Số dòng dữ liệu:", len(price))
     
     return fund, price
 
