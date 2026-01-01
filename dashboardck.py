@@ -88,7 +88,7 @@ def classify(row):
             row['Beta 5 Year'] > 1.0,
             row['P/E'] > 20
         ])
-        if score_remaining >= 1:  # ít nhất 1 trong 2 tiêu chí còn lại
+        if score_remaining >= 0:  # ít nhất 1 trong 2 tiêu chí còn lại
             return "Tích cực"
     
     # 2. Bảo thủ: ngành conservative + điều kiện nghiêm ngặt
