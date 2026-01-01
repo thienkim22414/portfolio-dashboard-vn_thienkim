@@ -10,30 +10,41 @@ import plotly.graph_objects as go
 def load_data():
     fund = pd.read_csv("FUNDAMENTAL_FOR_PORTFOLIO.csv")
     
-    # Đọc toàn bộ file như text để xử lý header bị bao ngoặc kép
+    # Đọc file price như text để xử lý dấu ngoặc kép và tách cột
     with open("PRICE_FOR_PORTFOLIO.csv", "r", encoding="utf-8") as f:
         lines = f.readlines()
     
-    # Bỏ dòng header bị bao ngoặc kép (dòng đầu)
-    data_lines = lines[1:]  # Bỏ dòng 1
+    # Bỏ dòng header bị bao ngoặc kép (dòng 0)
+    data_lines = lines[1:]
     
-    # Tạo DataFrame từ dữ liệu
-    from io import StringIO
-    data_str = ''.join(data_lines)
-    price = pd.read_csv(StringIO(data_str), header=None)
+    # Tạo list các row
+    rows = []
+    for line in data_lines:
+        # Bỏ dấu ngoặc kép ở đầu và cuối nếu có, rồi tách bằng dấu phẩy
+        line = line.strip()
+        if line.startswith('"') and line.endswith('"'):
+            line = line[1:-1]
+        row = line.split(',')
+        rows.append(row)
     
-    # Gán header thủ công (7 cột)
-    price.columns = ['Date', 'Symbol', 'Open', 'High', 'Low', 'Close', 'Volume']
+    # Tạo DataFrame
+    price = pd.DataFrame(rows, columns=['Date', 'Symbol', 'Open', 'High', 'Low', 'Close', 'Volume'])
     
-    # Chuyển cột Date thành datetime
+    # Chuyển kiểu dữ liệu
+    price['Open'] = pd.to_numeric(price['Open'], errors='coerce')
+    price['High'] = pd.to_numeric(price['High'], errors='coerce')
+    price['Low'] = pd.to_numeric(price['Low'], errors='coerce')
+    price['Close'] = pd.to_numeric(price['Close'], errors='coerce')
+    price['Volume'] = pd.to_numeric(price['Volume'], errors='coerce')
+    
+    # Chuyển cột Date
     price['DATE'] = pd.to_datetime(price['Date'])
     
-    # In header để kiểm tra (xóa sau khi chạy ổn)
+    # In kiểm tra
     st.write("Header price CSV sau khi sửa:", price.columns.tolist())
     st.write("Số dòng dữ liệu:", len(price))
     
     return fund, price
-
 fund_df, price_df = load_data()
 
 # Xử lý dữ liệu giá
