@@ -40,10 +40,7 @@ def load_data():
     # Chuyển cột Date
     price['DATE'] = pd.to_datetime(price['Date'])
     
-    # In kiểm tra
-    st.write("Header price CSV sau khi sửa:", price.columns.tolist())
-    st.write("Số dòng dữ liệu:", len(price))
-    
+   
     return fund, price
 fund_df, price_df = load_data()
 
