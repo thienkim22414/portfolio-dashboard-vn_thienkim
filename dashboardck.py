@@ -78,19 +78,19 @@ def classify(row):
     # + ít nhất 1 trong 2: Beta > 1.0 hoặc P/E > 20
     if (row['ROE'] > 15 and 
         row['GICS Industry Name'] in aggressive and
-        (row['Beta 5 Year'] > 1.0 or row['P/E'] > 20)):
+        (row['Beta 5 Year'] > 1.0 or row['P/E'] > 18)):
         return "Tích cực"
     
     # Bảo thủ: 3 bắt buộc + ít nhất 2 trong 3 bổ sung
-    if (row['Company Market Capitalization'] > 10_000_000_000 * 23000 and  # 10 tỷ USD ~ 230,000 tỷ VND (tỷ giá ~23,000)
-        row['Dividend Yield - Common - Net - Issue - %, TTM'] > 3 and
+    if (row['Company Market Capitalization'] > 25_000_000_000 and 
+        row['Dividend Yield - Common - Net - Issue - %, TTM'] > 1.5 and
         row['GICS Industry Name'] in ['Pharmaceuticals', 'Health Care Equipment & Services', 'Utilities', 
                                       'Independent Power and Renewable Electricity Producers', 
                                       'Food Products', 'Beverages', 'Household Products']):
         
         score_supplement = sum([
             row['Beta 5 Year'] < 0.8,
-            row['ROE'] > 15,
+            row['ROE'] > 10,
             10 <= row['P/E'] <= 20
         ])
         if score_supplement >= 2:
