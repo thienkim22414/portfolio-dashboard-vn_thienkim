@@ -11,11 +11,11 @@ def load_data():
     fund = pd.read_csv("FUNDAMENTAL_FOR_PORTFOLIO.csv")
     price = pd.read_csv("PRICE_FOR_PORTFOLIO.csv")
     
-    # Xử lý cột ngày – tự động nhận 'Date'
+    # Sửa để nhận đúng cột 'Date' (viết hoa D đầu)
     if 'Date' in price.columns:
         price['DATE'] = pd.to_datetime(price['Date'])
     else:
-        st.error("Không tìm thấy cột 'Date' trong file PRICE_FOR_PORTFOLIO.csv")
+        st.error(f"Không tìm thấy cột 'Date'! Header hiện tại: {', '.join(price.columns.tolist())}")
         st.stop()
     
     return fund, price
