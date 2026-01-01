@@ -89,31 +89,35 @@ conservative = ['Pharmaceuticals', 'Health Care Equipment & Services', 'Utilitie
 
 balanced_industries = ['Banks', 'Insurance', 'Telecommunication Services', 'Food & Staples Retailing', 'Transportation Infrastructure']
 
-# Phân loại – nới lỏng cho Tích cực
+# Phân loại khẩu vị rủi ro
 def classify(row):
-    score_aggressive = sum([
-        row['ROE'] > 15,
-        row['Beta 5 Year'] > 1.0,
-        row['P/E'] > 20,
-        row['GICS Industry Name'] in aggressive
-    ])
-    if score_aggressive >= 3:
-        return "Tích cực"
-
-    elif (row['Company Market Capitalization'] > 25_000_000_000_000 and
-          row['Dividend Yield - Common - Net - Issue - %, TTM'] > 1.5 and
-          row['Beta 5 Year'] < 1.2 and row['ROE'] > 10 and
-          row['GICS Industry Name'] in conservative):
-        return "Bảo thủ"
-
-    else:
-        score = sum([
-            row['ROE'] > 12,
-            0.8 <= row['Beta 5 Year'] <= 1.3,
-            row['Dividend Yield - Common - Net - Issue - %, TTM'] > 1.0,
-            row['P/E'] > 12
-        ])
-        return "Cân bằng" if score >= 2 else "Khác"
+    score_aggressive = sum([
+        row['ROE'] > 15,
+        row['Beta 5 Year'] > 1.0,
+        row['P/E'] > 20,
+        row['GICS Industry Name'] in aggressive
+    ])
+    if score_aggressive >= 3:
+        return "Tích cực"
+   
+    elif (row['Company Market Capitalization'] > 25_000_000_000_000 and
+          row['Dividend Yield - Common - Net - Issue - %, TTM'] > 1.5 and
+          row['Beta 5 Year'] < 1.2 and row['ROE'] > 10 and
+          row['GICS Industry Name'] in conservative):
+        return "Bảo thủ"
+   
+    else:
+        score = sum([
+            row['ROE'] > 12,
+            0.8 <= row['Beta 5 Year'] <= 1.3,
+            row['Dividend Yield - Common - Net - Issue - %, TTM'] > 1.0,
+            row['P/E'] > 12
+        ])
+        return "Cân bằng" if score >= 2 else "Khác"
+if 'Khau_Vi_Rui_Ro' not in fund_df.columns:
+    fund_df = fund_df.dropna(subset=['ROE', 'Beta 5 Year', 'P/E', 'GICS Industry Name',
+                                     'Dividend Yield - Common - Net - Issue - %, TTM'])
+    fund_df['Khau_Vi_Rui_Ro'] = fund_df.apply(classify, axis=1)
 
 # Hàm tính hiệu quả
 def expected_return(weights, log_returns):
