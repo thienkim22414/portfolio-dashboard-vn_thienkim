@@ -10,15 +10,19 @@ import plotly.graph_objects as go
 def load_data():
     fund = pd.read_csv("FUNDAMENTAL_FOR_PORTFOLIO.csv")
     price = pd.read_csv("PRICE_FOR_PORTFOLIO.csv")
+    
+    # Xử lý cột ngày – tự động nhận 'Date'
     if 'Date' in price.columns:
         price['DATE'] = pd.to_datetime(price['Date'])
     else:
-        price['DATE'] = pd.to_datetime(price['DATE'])
+        st.error("Không tìm thấy cột 'Date' trong file PRICE_FOR_PORTFOLIO.csv")
+        st.stop()
+    
     return fund, price
 
 fund_df, price_df = load_data()
 
-# Xử lý dữ liệu giá bluechip
+# Xử lý dữ liệu giá
 price_df = price_df.drop_duplicates(subset=['DATE', 'Symbol'])
 price_df = price_df.sort_values(['DATE', 'Symbol'])
 price_pivot = price_df.pivot(index='DATE', columns='Symbol', values='Close')
@@ -44,7 +48,7 @@ aggressive = ['IT Services', 'Software', 'Technology Hardware, Storage & Periphe
 conservative = ['Pharmaceuticals', 'Health Care Equipment & Services', 'Utilities', 'Independent Power and Renewable Electricity Producers',
                 'Food Products', 'Beverages', 'Household Products', 'Banks']
 
-# Phân loại – nới lỏng cho Tích cực
+# Phân loại khẩu vị rủi ro
 def classify(row):
     score_aggressive = sum([
         row['ROE'] > 15,
@@ -121,7 +125,7 @@ else:
 
     symbols = [s for s in filtered.index if s in log_return.columns]
     if len(symbols) < 3:
-        st.info(f"Chỉ có {len(symbols)} cổ phiếu – chưa đủ đa dạng.")
+        st.info(f"Chỉ có {len(symbols)} cổ phiếu – chưa đủ để tối ưu danh mục đa dạng.")
     else:
         log_returns_query = log_return[symbols]
         optimal_weights = optimize_portfolio(log_returns_query, risk_free_rate)
