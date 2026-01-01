@@ -70,18 +70,25 @@ aggressive = ['IT Services', 'Software', 'Technology Hardware, Storage & Periphe
 conservative = ['Pharmaceuticals', 'Health Care Equipment & Services', 'Utilities', 'Independent Power and Renewable Electricity Producers',
                 'Food Products', 'Beverages', 'Household Products', 'Banks']
 
-# Phân loại khẩu vị rủi ro
+# Danh sách ngành
+aggressive = ['IT Services', 'Software', 'Technology Hardware, Storage & Peripherals', 'Retail', 'Textiles, Apparel & Luxury Goods',
+              'Oil, Gas & Consumable Fuels', 'Chemicals', 'Real Estate Management & Development', 'Construction & Engineering',
+              'Metals & Mining', 'Transportation']
+
+conservative = ['Pharmaceuticals', 'Health Care Equipment & Services', 'Utilities', 'Independent Power and Renewable Electricity Producers',
+                'Food Products', 'Beverages', 'Household Products']
+
+# Phân loại khẩu vị rủi ro – NGÀNH + ROE BẮT BUỘC CHO TÍCH CỰC
 def classify(row):
     industry = row['GICS Industry Name']
     
-    # 1. Tích cực: ngành aggressive + điểm số tài chính cao
-    if industry in aggressive:
-        score = sum([
-            row['ROE'] > 15,
+    # 1. Tích cực: ngành aggressive + ROE > 15% là BẮT BUỘC + ít nhất 1 trong 2 (Beta hoặc P/E)
+    if industry in aggressive and row['ROE'] > 15:
+        score_remaining = sum([
             row['Beta 5 Year'] > 1.0,
             row['P/E'] > 20
         ])
-        if score >= 2:  # ít nhất 2/3 tiêu chí tài chính
+        if score_remaining >= 1:  # ít nhất 1 trong 2 tiêu chí còn lại
             return "Tích cực"
     
     # 2. Bảo thủ: ngành conservative + điều kiện nghiêm ngặt
@@ -92,7 +99,7 @@ def classify(row):
             row['ROE'] > 10):
             return "Bảo thủ"
     
-    # 3. Cân bằng: các ngành còn lại (hoặc balanced_industries) + điểm số trung bình
+    # 3. Cân bằng: các ngành còn lại + điểm số trung bình
     else:
         score = sum([
             row['ROE'] > 12,
@@ -109,7 +116,6 @@ if 'Khau_Vi_Rui_Ro' not in fund_df.columns:
     fund_df = fund_df.dropna(subset=['ROE', 'Beta 5 Year', 'P/E', 'GICS Industry Name',
                                      'Dividend Yield - Common - Net - Issue - %, TTM', 'Company Market Capitalization'])
     fund_df['Khau_Vi_Rui_Ro'] = fund_df.apply(classify, axis=1)
-
 # Hàm tính hiệu quả
 def expected_return(weights, log_returns):
     return np.sum(log_returns.mean() * weights) * 252 * 100
