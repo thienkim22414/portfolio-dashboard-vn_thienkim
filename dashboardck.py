@@ -79,16 +79,28 @@ conservative = ['Pharmaceuticals', 'Health Care Equipment & Services', 'Utilitie
                 'Food Products', 'Beverages', 'Household Products']
 
 # Phân loại khẩu vị rủi ro – NGÀNH + ROE BẮT BUỘC CHO TÍCH CỰC
+# Danh sách ngành
+aggressive = ['IT Services', 'Software', 'Technology Hardware, Storage & Peripherals', 'Retail', 'Textiles, Apparel & Luxury Goods',
+              'Oil, Gas & Consumable Fuels', 'Chemicals', 'Real Estate Management & Development', 'Construction & Engineering',
+              'Metals & Mining', 'Transportation', 'Media', 'Automobiles']
+
+conservative = ['Pharmaceuticals', 'Health Care Equipment & Services', 'Utilities', 'Independent Power and Renewable Electricity Producers',
+                'Food Products', 'Beverages', 'Household Products']
+
+balanced_industries = ['Banks', 'Insurance', 'Telecommunication Services', 'Food & Staples Retailing', 'Transportation Infrastructure']
+
+# Phân loại khẩu vị rủi ro – NGÀNH LÀ BẮT BUỘC ĐẦU TIÊN
 def classify(row):
     industry = row['GICS Industry Name']
     
-    # 1. Tích cực: ngành aggressive + ROE > 15% là BẮT BUỘC + ít nhất 1 trong 2 (Beta hoặc P/E)
-    if industry in aggressive and row['ROE'] > 15:
-        score_remaining = sum([
+    # 1. Tích cực: ngành aggressive + điểm số tài chính cao
+    if industry in aggressive:
+        score = sum([
+            row['ROE'] > 15,
             row['Beta 5 Year'] > 1.0,
             row['P/E'] > 20
         ])
-        if score_remaining >= 0:  # ít nhất 1 trong 2 tiêu chí còn lại
+        if score >= 2:  # ít nhất 2/3 tiêu chí tài chính
             return "Tích cực"
     
     # 2. Bảo thủ: ngành conservative + điều kiện nghiêm ngặt
@@ -99,7 +111,7 @@ def classify(row):
             row['ROE'] > 10):
             return "Bảo thủ"
     
-    # 3. Cân bằng: các ngành còn lại + điểm số trung bình
+    # 3. Cân bằng: các ngành còn lại (hoặc balanced_industries) + điểm số trung bình
     else:
         score = sum([
             row['ROE'] > 12,
