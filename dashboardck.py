@@ -194,7 +194,6 @@ st.sidebar.success("Risk-free rate VN (TPCP 10 năm): 4.18% (dữ liệu 30/12/2
 # Giao diện
 st.title("🎯 Bảng Điều Khiển Danh Mục Đầu Tư Tối Ưu (Bluechip VN)")
 
-st.sidebar.info("Dữ liệu: 41 cổ phiếu bluechip lớn nhất HOSE")
 
 khau_vi = st.sidebar.selectbox("Chọn khẩu vị rủi ro", ["Bảo thủ", "Cân bằng", "Tích cực"])
 
