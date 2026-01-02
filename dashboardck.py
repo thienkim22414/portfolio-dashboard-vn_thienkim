@@ -62,65 +62,78 @@ if 'P/E' not in fund_df.columns:
     fund_df['P/E'] = fund_df['Close'] / fund_df['EPS - Basic - excl Extraordinary Items, Common - Total']
     fund_df['P/E'] = fund_df['P/E'].replace([np.inf, -np.inf], np.nan).fillna(0)
 
-# Danh sách ngành
-aggressive = ['IT Services', 'Software', 'Technology Hardware, Storage & Peripherals', 'Retail', 'Textiles, Apparel & Luxury Goods',
-              'Oil, Gas & Consumable Fuels', 'Chemicals', 'Real Estate Management & Development', 'Construction & Engineering',
-              'Metals & Mining', 'Transportation']
+# DANH SÁCH NGÀNH
+# ===============================
 
-conservative = ['Pharmaceuticals', 'Health Care Equipment & Services', 'Utilities', 'Independent Power and Renewable Electricity Producers',
-                'Food Products', 'Beverages', 'Household Products', 'Banks']
+aggressive = [
+    'IT Services', 'Software', 'Technology Hardware, Storage & Peripherals',
+    'Retail', 'Textiles, Apparel & Luxury Goods',
+    'Oil, Gas & Consumable Fuels', 'Chemicals',
+    'Real Estate Management & Development', 'Construction & Engineering',
+    'Metals & Mining', 'Transportation'
+]
 
-# Danh sách ngành
-aggressive = ['IT Services', 'Software', 'Technology Hardware, Storage & Peripherals', 'Retail', 'Textiles, Apparel & Luxury Goods',
-              'Oil, Gas & Consumable Fuels', 'Chemicals', 'Real Estate Management & Development', 'Construction & Engineering',
-              'Metals & Mining', 'Transportation']
+conservative = [
+    'Pharmaceuticals', 'Health Care Equipment & Services',
+    'Utilities', 'Independent Power and Renewable Electricity Producers',
+    'Food Products', 'Beverages', 'Household Products', 'Banks'
+]
 
-conservative = ['Pharmaceuticals', 'Health Care Equipment & Services', 'Utilities', 'Independent Power and Renewable Electricity Producers',
-                'Food Products', 'Beverages', 'Household Products']
+balanced = [
+    'Industrial Conglomerates', 'Machinery',
+    'Trading Companies & Distributors',
+    'Commercial Services & Supplies',
+    'Transportation Infrastructure'
+]
 
-# Phân loại khẩu vị rủi ro – NGÀNH + ROE BẮT BUỘC CHO TÍCH CỰC
-# Danh sách ngành
-aggressive = ['IT Services', 'Software', 'Technology Hardware, Storage & Peripherals', 'Retail', 'Textiles, Apparel & Luxury Goods',
-              'Oil, Gas & Consumable Fuels', 'Chemicals', 'Real Estate Management & Development', 'Construction & Engineering',
-              'Metals & Mining', 'Transportation', 'Media', 'Automobiles']
-
-conservative = ['Pharmaceuticals', 'Health Care Equipment & Services', 'Utilities', 'Independent Power and Renewable Electricity Producers',
-                'Food Products', 'Beverages', 'Household Products']
-
-balanced_industries = ['Banks', 'Insurance', 'Telecommunication Services', 'Food & Staples Retailing', 'Transportation Infrastructure']
-# Phân loại khẩu vị rủi ro
+# ===============================
 def classify(row):
-    # Tích cực: giữ nguyên (score ≥3/4)
-    score_aggressive = sum([
-        row['ROE'] > 15,
-        row['Beta 5 Year'] > 1.0,
-        row['P/E'] > 20,
-        row['GICS Industry Name'] in aggressive
-    ])
-    if score_aggressive >= 3:
-        return "Tích cực"
+    industry = row['GICS Industry Name']
 
-    # Bảo thủ: 3 bắt buộc + ít nhất 1 trong 2 (Beta hoặc ROE)
-    elif (row['Company Market Capitalization'] > 25_000_000_000 and  # > 25 tỷ VND
-          row['Dividend Yield - Common - Net - Issue - %, TTM'] > 1.5 and
-          row['GICS Industry Name'] in conservative and
-          (row['Beta 5 Year'] < 1.2 or row['ROE'] > 10)):
-        return "Bảo thủ"
+    # ===== 1️⃣ TÍCH CỰC =====
+    if industry in aggressive:
+        score_aggressive = sum([
+            row['ROE'] >= 15,
+            row['Beta 5 Year'] >= 1.0,
+            row['P/E'] >= 18
+        ])
+        if score_aggressive >= 2:
+            return "Tích cực"
 
-    # Cân bằng: điểm số ≥2/4
-    else:
-        score = sum([
+    # ===== 2️⃣ BẢO THỦ =====
+    if industry in conservative:
+        score_conservative = sum([
+            row['Company Market Capitalization'] >= 25_000_000_000_000,
+            row['Dividend Yield - Common - Net - Issue - %, TTM'] >= 1.5,
+            row['Beta 5 Year'] <= 1.0,
+            row['ROE'] >= 10
+        ])
+        if score_conservative >= 3:
+            return "Bảo thủ"
+
+    # CÂN BẰNG – NGÀNH BẮT BUỘC
+    # ===============================
+    if industry in balanced:
+        score_balanced = sum([
             row['ROE'] > 12,
-            0.8 <= row['Beta 5 Year'] <= 1.3,
+            0.8 <= row['Beta 5 Year'] <= 1.4,
             row['Dividend Yield - Common - Net - Issue - %, TTM'] > 1.0,
             row['P/E'] > 12
         ])
-        return "Cân bằng" if score >= 2 else "Khác"
+        if score_balanced >= 2:
+            return "Cân bằng"
 
-if 'Khau_Vi_Rui_Ro' not in fund_df.columns:
-    fund_df = fund_df.dropna(subset=['ROE', 'Beta 5 Year', 'P/E', 'GICS Industry Name',
-                                     'Dividend Yield - Common - Net - Issue - %, TTM', 'Company Market Capitalization'])
-    fund_df['Khau_Vi_Rui_Ro'] = fund_df.apply(classify, axis=1)
+    return "Khác"
+
+# Áp dụng phân loại
+required_cols = [
+    'ROE', 'Beta 5 Year', 'P/E', 'GICS Industry Name',
+    'Dividend Yield - Common - Net - Issue - %, TTM',
+    'Company Market Capitalization'
+]
+
+fund_df = fund_df.dropna(subset=required_cols)
+fund_df['Khau_Vi_Rui_Ro'] = fund_df.apply(classify, axis=1)
 # Hàm tính hiệu quả
 def expected_return(weights, log_returns):
     return np.sum(log_returns.mean() * weights) * 252 * 100
