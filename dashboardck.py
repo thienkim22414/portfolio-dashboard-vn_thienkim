@@ -63,8 +63,8 @@ if 'P/E' not in fund_df.columns:
     fund_df['P/E'] = fund_df['P/E'].replace([np.inf, -np.inf], np.nan).fillna(0)
 
 # DANH SÁCH NGÀNH
+# DANH SÁCH NGÀNH
 # ===============================
-
 aggressive = [
     'IT Services', 'Software', 'Technology Hardware, Storage & Peripherals',
     'Retail', 'Textiles, Apparel & Luxury Goods',
@@ -72,24 +72,22 @@ aggressive = [
     'Real Estate Management & Development', 'Construction & Engineering',
     'Metals & Mining', 'Transportation'
 ]
-
 conservative = [
     'Pharmaceuticals', 'Health Care Equipment & Services',
     'Utilities', 'Independent Power and Renewable Electricity Producers',
     'Food Products', 'Beverages', 'Household Products', 'Banks'
 ]
-
 balanced = [
     'Industrial Conglomerates', 'Machinery',
     'Trading Companies & Distributors',
     'Commercial Services & Supplies',
     'Transportation Infrastructure'
 ]
-
 # ===============================
+
 def classify(row):
     industry = row['GICS Industry Name']
-
+    
     # ===== 1️⃣ TÍCH CỰC =====
     if industry in aggressive:
         score_aggressive = sum([
@@ -99,7 +97,7 @@ def classify(row):
         ])
         if score_aggressive >= 2:
             return "Tích cực"
-
+    
     # ===== 2️⃣ BẢO THỦ =====
     if industry in conservative:
         score_conservative = sum([
@@ -110,19 +108,20 @@ def classify(row):
         ])
         if score_conservative >= 3:
             return "Bảo thủ"
-
-    # CÂN BẰNG – NGÀNH BẮT BUỘC
-    # ===============================
-    if industry in balanced:
-        score_balanced = sum([
-            row['ROE'] > 12,
-            0.8 <= row['Beta 5 Year'] <= 1.4,
-            row['Dividend Yield - Common - Net - Issue - %, TTM'] > 1.0,
-            row['P/E'] > 12
-        ])
-        if score_balanced >= 2:
-            return "Cân bằng"
-
+    
+    # ===== 3️⃣ CÂN BẰNG =====
+    # Không áp đặt ràng buộc theo ngành (khác với hai phong cách còn lại).
+    # Sự linh hoạt về mặt ngành nghề cho phép hệ thống đề xuất một tập hợp cổ phiếu đa dạng hơn,
+    # phù hợp với nhà đầu tư muốn cân bằng giữa tăng trưởng và ổn định mà không bị giới hạn bởi ngành cụ thể.
+    score_balanced = sum([
+        row['ROE'] > 12,
+        0.8 <= row['Beta 5 Year'] <= 1.4,
+        row['Dividend Yield - Common - Net - Issue - %, TTM'] > 1.0,
+        row['P/E'] > 12
+    ])
+    if score_balanced >= 2:
+        return "Cân bằng"
+    
     return "Khác"
 
 # Áp dụng phân loại
@@ -131,9 +130,9 @@ required_cols = [
     'Dividend Yield - Common - Net - Issue - %, TTM',
     'Company Market Capitalization'
 ]
-
 fund_df = fund_df.dropna(subset=required_cols)
 fund_df['Khau_Vi_Rui_Ro'] = fund_df.apply(classify, axis=1)
+
 # Hàm tính hiệu quả
 def expected_return(weights, log_returns):
     return np.sum(log_returns.mean() * weights) * 252 * 100
