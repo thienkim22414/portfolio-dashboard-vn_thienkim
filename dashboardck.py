@@ -104,14 +104,14 @@ def classify(row):
         # Điều kiện BẮT BUỘC
         if (
             row['Company Market Capitalization'] >= 25_000_000_000_000 and
-            row['Dividend Yield - Common - Net - Issue - %, TTM'] >= 1.5
+            row['Dividend Yield - Common - Net - Issue - %, TTM'] >= 2
         ):
             # Điều kiện LINH HOẠT (chỉ cần 1 trong 2)
             score_conservative = sum([
                 row['Beta 5 Year'] <= 1.0,
                 row['ROE'] >= 10
             ])
-            if score_conservative >= 2:
+            if score_conservative >= 1:
                 return "Bảo thủ"
     
     # ===== 3️⃣ CÂN BẰNG =====
