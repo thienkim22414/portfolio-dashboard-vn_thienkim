@@ -102,7 +102,7 @@ def classify(row):
         # Điều kiện BẮT BUỘC (phải thỏa mãn đồng thời cả 3)
         if (
             row['Company Market Capitalization'] >= 25_000_000_000_000 and
-            row['Dividend Yield - Common - Net - Issue - %, TTM'] >= 1.5 and
+            row['Dividend Yield - Common - Net - Issue - %, TTM'] >= 2 and
             industry in conservative  # Đảm bảo ngành phòng thủ (đã có trong if, nhưng giữ để rõ ràng)
         ):
             # Điều kiện LINH HOẠT (chỉ cần thỏa mãn ít nhất 1 trong 3)
