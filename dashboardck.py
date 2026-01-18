@@ -87,15 +87,15 @@ balanced = [
 def classify(row):
     industry = row['GICS Industry Name']
    
-    # ===== 1️⃣ TÍCH CỰC =====
+    # ===== 1️⃣ TĂNG TRƯỞNG (trước đây là Tích cực) =====
     if industry in aggressive:
         score_aggressive = sum([
             row['ROE'] >= 15,
             row['Beta 5 Year'] >= 1.0,
             row['P/E'] >= 18
         ])
-        if score_aggressive >= 1:
-            return "Tích cực"
+        if score_aggressive >= 2:
+            return "Tăng trưởng"
    
     # ===== 2️⃣ BẢO THỦ =====
     if industry in conservative:
@@ -180,7 +180,7 @@ def load_benchmark():
             sharpe = (ret/100 - 0.0418) / (vol/100) if vol > 0 else 0
             benchmarks[name] = (round(ret, 1), round(vol, 1), round(sharpe, 2))
         except Exception as e:
-            benchmarks[name] = (0, 0, 0) # Nếu lỗi file, bỏ qua benchmark
+            benchmarks[name] = (0, 0, 0)  # Nếu lỗi file, bỏ qua benchmark
     return benchmarks
 
 benchmarks = load_benchmark()
@@ -197,41 +197,41 @@ khau_vi = st.sidebar.selectbox("Phong cách đầu tư", ["Bảo thủ", "Cân b
 filtered = fund_df[fund_df['Khau_Vi_Rui_Ro'] == khau_vi].set_index('Symbol')
 
 if filtered.empty:
-    st.info(f"Không có cổ phiếu nào thuộc khẩu vị '{khau_vi}'.")
+    st.info(f"Không có cổ phiếu nào thuộc phong cách '{khau_vi}'.")
 else:
     st.markdown(f"<h2 style='color: #2ca02c;'>Cổ phiếu phù hợp cho {khau_vi}</h2>", unsafe_allow_html=True)
     st.dataframe(filtered[['Company Common Name', 'ROE', 'Beta 5 Year', 'Dividend Yield - Common - Net - Issue - %, TTM', 'P/E']])
-    
+   
     symbols = [s for s in filtered.index if s in log_return.columns]
-    
+   
     if len(symbols) < 3:
         st.info(f"Chỉ có {len(symbols)} cổ phiếu – chưa đủ để tối ưu danh mục đa dạng.")
     else:
         log_returns_query = log_return[symbols]
         optimal_weights = optimize_portfolio(log_returns_query, risk_free_rate)
-        
+       
         portfolio_df = pd.DataFrame({'Ticker': symbols, 'Weight': optimal_weights})
         portfolio_df = portfolio_df[portfolio_df['Weight'] > 0.0001].sort_values('Weight', ascending=False)
-        
+       
         merged = portfolio_df.merge(filtered[['Dividend Yield - Common - Net - Issue - %, TTM']], left_on='Ticker', right_index=True)
         dividend_yield_port = (merged['Weight'] * merged['Dividend Yield - Common - Net - Issue - %, TTM']).sum()
-        
+       
         optimal_return = expected_return(optimal_weights, log_returns_query)
         optimal_vol = standard_deviation(optimal_weights, log_returns_query.cov())
         optimal_sharpe = sharpe_ratio(optimal_weights, log_returns_query, log_returns_query.cov(), risk_free_rate)
-        
+       
         st.markdown("<h2 style='color: #1f77b4;'>Thông tin danh mục tối ưu</h2>", unsafe_allow_html=True)
         col1, col2, col3, col4 = st.columns(4)
         col1.metric("Lợi nhuận kỳ vọng", f"{optimal_return:.1f}%")
         col2.metric("Biến động", f"{optimal_vol:.1f}%")
         col3.metric("Sharpe Ratio", f"{optimal_sharpe:.2f}")
         col4.metric("Dividend Yield", f"{dividend_yield_port:.2f}%")
-        
+       
         fig = px.pie(portfolio_df, values='Weight', names='Ticker', title='Tỷ trọng danh mục tối ưu',
                      color_discrete_sequence=px.colors.sequential.Viridis)
         fig.update_traces(textinfo='percent+label', pull=[0.1 if w > 0.1 else 0 for w in portfolio_df['Weight']])
         st.plotly_chart(fig, use_container_width=True)
-        
+       
         st.markdown("<h2 style='color: #9467bd;'>Ma trận tương quan cổ phiếu trong danh mục</h2>", unsafe_allow_html=True)
         corr = log_returns_query.corr()
         fig_corr = go.Figure(data=go.Heatmap(
@@ -241,7 +241,6 @@ else:
         ))
         fig_corr.update_layout(title="Ma trận tương quan log-return", height=600, xaxis_title="Cổ phiếu", yaxis_title="Cổ phiếu", xaxis=dict(tickangle=45))
         st.plotly_chart(fig_corr, use_container_width=True)
-        
        
         # So sánh benchmark
         st.markdown("<h2 style='color: #ff7f0e;'>So sánh với Benchmark (2020-2025)</h2>", unsafe_allow_html=True)
@@ -253,7 +252,7 @@ else:
         ]
         df_comp = pd.DataFrame(comparison_data)
         st.dataframe(df_comp.style.highlight_max(subset=['Sharpe'], color='lightgreen'))
-        
+       
         fig = go.Figure()
         for row in comparison_data:
             color = 'red' if row['Nhóm'] == khau_vi else 'gray'
