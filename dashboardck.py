@@ -111,7 +111,7 @@ def classify(row):
                 row['Beta 5 Year'] <= 1.0,
                 row['ROE'] >= 10
             ])
-            if score_conservative >= 1:
+            if score_conservative >= 2:
                 return "Bảo thủ"
     
     # ===== 3️⃣ CÂN BẰNG =====
