@@ -9,14 +9,14 @@ import plotly.graph_objects as go
 @st.cache_data
 def load_data():
     fund = pd.read_csv("FUNDAMENTAL_FOR_PORTFOLIO.csv")
-    
+   
     # Đọc file price như text để xử lý dấu ngoặc kép và tách cột
     with open("PRICE_FOR_PORTFOLIO.csv", "r", encoding="utf-8") as f:
         lines = f.readlines()
-    
+   
     # Bỏ dòng header bị bao ngoặc kép (dòng 0)
     data_lines = lines[1:]
-    
+   
     # Tạo list các row
     rows = []
     for line in data_lines:
@@ -26,22 +26,22 @@ def load_data():
             line = line[1:-1]
         row = line.split(',')
         rows.append(row)
-    
+   
     # Tạo DataFrame
     price = pd.DataFrame(rows, columns=['Date', 'Symbol', 'Open', 'High', 'Low', 'Close', 'Volume'])
-    
+   
     # Chuyển kiểu dữ liệu
     price['Open'] = pd.to_numeric(price['Open'], errors='coerce')
     price['High'] = pd.to_numeric(price['High'], errors='coerce')
     price['Low'] = pd.to_numeric(price['Low'], errors='coerce')
     price['Close'] = pd.to_numeric(price['Close'], errors='coerce')
     price['Volume'] = pd.to_numeric(price['Volume'], errors='coerce')
-    
+   
     # Chuyển cột Date
     price['DATE'] = pd.to_datetime(price['Date'])
-    
    
     return fund, price
+
 fund_df, price_df = load_data()
 
 # Xử lý dữ liệu giá
@@ -62,7 +62,6 @@ if 'P/E' not in fund_df.columns:
     fund_df['P/E'] = fund_df['Close'] / fund_df['EPS - Basic - excl Extraordinary Items, Common - Total']
     fund_df['P/E'] = fund_df['P/E'].replace([np.inf, -np.inf], np.nan).fillna(0)
 
-# DANH SÁCH NGÀNH
 # DANH SÁCH NGÀNH
 # ===============================
 aggressive = [
@@ -87,7 +86,7 @@ balanced = [
 
 def classify(row):
     industry = row['GICS Industry Name']
-    
+   
     # ===== 1️⃣ TÍCH CỰC =====
     if industry in aggressive:
         score_aggressive = sum([
@@ -97,7 +96,7 @@ def classify(row):
         ])
         if score_aggressive >= 2:
             return "Tích cực"
-    
+   
     # ===== 2️⃣ BẢO THỦ =====
     if industry in conservative:
         score_conservative = sum([
@@ -108,7 +107,7 @@ def classify(row):
         ])
         if score_conservative >= 3:
             return "Bảo thủ"
-    
+   
     # ===== 3️⃣ CÂN BẰNG =====
     # Không áp đặt ràng buộc theo ngành (khác với hai phong cách còn lại).
     # Sự linh hoạt về mặt ngành nghề cho phép hệ thống đề xuất một tập hợp cổ phiếu đa dạng hơn,
@@ -121,7 +120,7 @@ def classify(row):
     ])
     if score_balanced >= 2:
         return "Cân bằng"
-    
+   
     return "Khác"
 
 # Áp dụng phân loại
@@ -166,7 +165,7 @@ def load_benchmark():
         'VN30': "Dữ liệu Lịch sử VN 30.csv",
         'VN100': "Dữ liệu Lịch sử VN100.csv"
     }
-    
+   
     benchmarks = {}
     for name, file in files.items():
         try:
@@ -181,7 +180,7 @@ def load_benchmark():
             sharpe = (ret/100 - 0.0418) / (vol/100) if vol > 0 else 0
             benchmarks[name] = (round(ret, 1), round(vol, 1), round(sharpe, 2))
         except Exception as e:
-            benchmarks[name] = (0, 0, 0)  # Nếu lỗi file, bỏ qua benchmark
+            benchmarks[name] = (0, 0, 0) # Nếu lỗi file, bỏ qua benchmark
     return benchmarks
 
 benchmarks = load_benchmark()
@@ -193,7 +192,6 @@ st.sidebar.success("Risk-free rate VN (TPCP 10 năm): 4.18% (dữ liệu 30/12/2
 # Giao diện
 st.title("🎯 Bảng Điều Khiển Danh Mục Đầu Tư Tối Ưu (Bluechip VN)")
 
-
 khau_vi = st.sidebar.selectbox("Chọn khẩu vị rủi ro", ["Bảo thủ", "Cân bằng", "Tích cực"])
 
 filtered = fund_df[fund_df['Khau_Vi_Rui_Ro'] == khau_vi].set_index('Symbol')
@@ -203,36 +201,37 @@ if filtered.empty:
 else:
     st.markdown(f"<h2 style='color: #2ca02c;'>Cổ phiếu phù hợp cho {khau_vi}</h2>", unsafe_allow_html=True)
     st.dataframe(filtered[['Company Common Name', 'ROE', 'Beta 5 Year', 'Dividend Yield - Common - Net - Issue - %, TTM', 'P/E']])
-
+    
     symbols = [s for s in filtered.index if s in log_return.columns]
+    
     if len(symbols) < 3:
         st.info(f"Chỉ có {len(symbols)} cổ phiếu – chưa đủ để tối ưu danh mục đa dạng.")
     else:
         log_returns_query = log_return[symbols]
         optimal_weights = optimize_portfolio(log_returns_query, risk_free_rate)
-
+        
         portfolio_df = pd.DataFrame({'Ticker': symbols, 'Weight': optimal_weights})
         portfolio_df = portfolio_df[portfolio_df['Weight'] > 0.0001].sort_values('Weight', ascending=False)
-
+        
         merged = portfolio_df.merge(filtered[['Dividend Yield - Common - Net - Issue - %, TTM']], left_on='Ticker', right_index=True)
         dividend_yield_port = (merged['Weight'] * merged['Dividend Yield - Common - Net - Issue - %, TTM']).sum()
-
+        
         optimal_return = expected_return(optimal_weights, log_returns_query)
         optimal_vol = standard_deviation(optimal_weights, log_returns_query.cov())
         optimal_sharpe = sharpe_ratio(optimal_weights, log_returns_query, log_returns_query.cov(), risk_free_rate)
-
+        
         st.markdown("<h2 style='color: #1f77b4;'>Thông tin danh mục tối ưu</h2>", unsafe_allow_html=True)
         col1, col2, col3, col4 = st.columns(4)
         col1.metric("Lợi nhuận kỳ vọng", f"{optimal_return:.1f}%")
         col2.metric("Biến động", f"{optimal_vol:.1f}%")
         col3.metric("Sharpe Ratio", f"{optimal_sharpe:.2f}")
         col4.metric("Dividend Yield", f"{dividend_yield_port:.2f}%")
-
+        
         fig = px.pie(portfolio_df, values='Weight', names='Ticker', title='Tỷ trọng danh mục tối ưu',
                      color_discrete_sequence=px.colors.sequential.Viridis)
         fig.update_traces(textinfo='percent+label', pull=[0.1 if w > 0.1 else 0 for w in portfolio_df['Weight']])
         st.plotly_chart(fig, use_container_width=True)
-
+        
         st.markdown("<h2 style='color: #9467bd;'>Ma trận tương quan cổ phiếu trong danh mục</h2>", unsafe_allow_html=True)
         corr = log_returns_query.corr()
         fig_corr = go.Figure(data=go.Heatmap(
@@ -242,56 +241,53 @@ else:
         ))
         fig_corr.update_layout(title="Ma trận tương quan log-return", height=600, xaxis_title="Cổ phiếu", yaxis_title="Cổ phiếu", xaxis=dict(tickangle=45))
         st.plotly_chart(fig_corr, use_container_width=True)
-
+        
         st.markdown("<h2 style='color: #d62728;'>Lợi nhuận tích lũy: Danh mục vs Benchmark</h2>", unsafe_allow_html=True)
-
-# Cumulative return danh mục
-portfolio_cum = (log_returns_query + 1).cumprod().dot(optimal_weights)
-
-fig = go.Figure()
-fig.add_trace(go.Scatter(
-    x=portfolio_cum.index, 
-    y=portfolio_cum, 
-    name="Danh mục tối ưu",
-    line=dict(width=3)
-))
-
-# --- Hàm load cumulative benchmark ---
-def load_benchmark_cum(file):
-    df = pd.read_csv(file, quoting=1, quotechar='"', doublequote=True)
-    df['Ngày'] = pd.to_datetime(df['Ngày'], format='%d/%m/%Y')
-    df = df.sort_values('Ngày')
-    df['Close'] = pd.to_numeric(df['Lần cuối'].str.replace(',', ''))
-    log_r = np.log(df['Close'] / df['Close'].shift(1)).dropna()
-    return (log_r + 1).cumprod()
-
-benchmark_files = {
-    "VN-Index": "Dữ liệu Lịch sử VN Index.csv",
-    "VN30": "Dữ liệu Lịch sử VN 30.csv",
-    "VN100": "Dữ liệu Lịch sử VN100.csv"
-}
-
-for name, file in benchmark_files.items():
-    try:
-        cum_bm = load_benchmark_cum(file)
+        
+        # Cumulative return danh mục
+        portfolio_cum = (log_returns_query + 1).cumprod().dot(optimal_weights)
+        fig = go.Figure()
         fig.add_trace(go.Scatter(
-            x=cum_bm.index, 
-            y=cum_bm, 
-            name=name,
-            line=dict(dash="dash")
+            x=portfolio_cum.index,
+            y=portfolio_cum,
+            name="Danh mục tối ưu",
+            line=dict(width=3)
         ))
-    except:
-        pass
-
-fig.update_layout(
-    title="Cumulative Returns: Portfolio vs Benchmark",
-    xaxis_title="Ngày",
-    yaxis_title="Lợi nhuận tích lũy",
-    height=550
-)
-st.plotly_chart(fig, use_container_width=True)
-
-
+        
+        # --- Hàm load cumulative benchmark ---
+        def load_benchmark_cum(file):
+            df = pd.read_csv(file, quoting=1, quotechar='"', doublequote=True)
+            df['Ngày'] = pd.to_datetime(df['Ngày'], format='%d/%m/%Y')
+            df = df.sort_values('Ngày')
+            df['Close'] = pd.to_numeric(df['Lần cuối'].str.replace(',', ''))
+            log_r = np.log(df['Close'] / df['Close'].shift(1)).dropna()
+            return (log_r + 1).cumprod()
+        
+        benchmark_files = {
+            "VN-Index": "Dữ liệu Lịch sử VN Index.csv",
+            "VN30": "Dữ liệu Lịch sử VN 30.csv",
+            "VN100": "Dữ liệu Lịch sử VN100.csv"
+        }
+        for name, file in benchmark_files.items():
+            try:
+                cum_bm = load_benchmark_cum(file)
+                fig.add_trace(go.Scatter(
+                    x=cum_bm.index,
+                    y=cum_bm,
+                    name=name,
+                    line=dict(dash="dash")
+                ))
+            except:
+                pass
+        
+        fig.update_layout(
+            title="Cumulative Returns: Portfolio vs Benchmark",
+            xaxis_title="Ngày",
+            yaxis_title="Lợi nhuận tích lũy",
+            height=550
+        )
+        st.plotly_chart(fig, use_container_width=True)
+        
         # So sánh benchmark
         st.markdown("<h2 style='color: #ff7f0e;'>So sánh với Benchmark (2020-2025)</h2>", unsafe_allow_html=True)
         comparison_data = [
@@ -302,7 +298,7 @@ st.plotly_chart(fig, use_container_width=True)
         ]
         df_comp = pd.DataFrame(comparison_data)
         st.dataframe(df_comp.style.highlight_max(subset=['Sharpe'], color='lightgreen'))
-
+        
         fig = go.Figure()
         for row in comparison_data:
             color = 'red' if row['Nhóm'] == khau_vi else 'gray'
