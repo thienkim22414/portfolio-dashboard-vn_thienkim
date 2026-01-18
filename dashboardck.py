@@ -102,13 +102,13 @@ def classify(row):
         # Điều kiện BẮT BUỘC (phải thỏa mãn đồng thời cả 3)
         if (
             row['Company Market Capitalization'] >= 25_000_000_000_000 and
-            row['Dividend Yield - Common - Net - Issue - %, TTM'] >= 1.5 and
+            row['Dividend Yield - Common - Net - Issue - %, TTM'] >= 2 and
             industry in conservative  # Đảm bảo ngành phòng thủ (đã có trong if, nhưng giữ để rõ ràng)
         ):
             # Điều kiện LINH HOẠT (chỉ cần thỏa mãn ít nhất 1 trong 3)
             score_flex = sum([
-                row['Beta 5 Year'] <= 0.9,
-                row['ROE'] >= 12,
+                row['Beta 5 Year'] <= 0.8,
+                row['ROE'] >= 10,
                 10 <= row['P/E'] <= 20
             ])
             if score_flex >= 2:
