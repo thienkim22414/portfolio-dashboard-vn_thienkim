@@ -109,9 +109,9 @@ def classify(row):
             score_flex = sum([
                 row['Beta 5 Year'] <= 1,
                 row['ROE'] >= 10,
-                12 <= row['P/E'] <= 18
+                12 <= row['P/E'] <= 16
             ])
-            if score_flex >= 3:
+            if score_flex >= 2:
                 return "Bảo thủ"
     
     # ===== 3️⃣ CÂN BẰNG =====
