@@ -102,7 +102,7 @@ def classify(row):
             # Chỉ cần 1 trong 2
             cond_growth = sum([
                 row['Beta 5 Year'] >= 1.0,
-                row['P/E'] >= 18
+                row['P/E'] >= 15
             ])
             if cond_growth >= 1:
                 return "Tăng trưởng"
