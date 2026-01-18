@@ -105,11 +105,11 @@ def classify(row):
             row['Dividend Yield - Common - Net - Issue - %, TTM'] >= 2 and
             industry in conservative  # Đảm bảo ngành phòng thủ (đã có trong if, nhưng giữ để rõ ràng)
         ):
-            # Điều kiện LINH HOẠT (chỉ cần thỏa mãn ít nhất 1 trong 3)
+            # Điều kiện LINH HOẠT (chỉ cần thỏa mãn ít nhất 2 trong 3)
             score_flex = sum([
                 row['Beta 5 Year'] <= 1,
                 row['ROE'] >= 10,
-                12 <= row['P/E'] <= 16
+                14 <= row['P/E'] <= 16
             ])
             if score_flex >= 2:
                 return "Bảo thủ"
