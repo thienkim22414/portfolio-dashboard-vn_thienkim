@@ -87,24 +87,22 @@ balanced = [
 def classify(row):
     industry = row['GICS Industry Name']
     
-    # ===== 1️⃣ TĂNG TRƯỞNG (trước đây là Tích cực) =====
+    # ===== 1️⃣ TĂNG TRƯỞNG =====
     if industry in aggressive:
-        # Điều kiện bắt buộc
-        if row['ROE'] > 15:
-            # Chỉ cần 1 trong 2
-            cond_growth = sum([
-                row['Beta 5 Year'] >= 1.0,
-                row['P/E'] >= 15
-            ])
-            if cond_growth >= 1:
-                return "Tăng trưởng"
+        score_aggressive = sum([
+            row['ROE'] >= 15,
+            row['Beta 5 Year'] >= 1.0,
+            row['P/E'] >= 18
+        ])
+        if score_aggressive >= 2:  # Cần ít nhất 2/3 tiêu chí
+            return "Tăng trưởng"
     
     # ===== 2️⃣ BẢO THỦ =====
     if industry in conservative:
         # Điều kiện BẮT BUỘC
         if (
             row['Company Market Capitalization'] >= 25_000_000_000_000 and
-            row['Dividend Yield - Common - Net - Issue - %, TTM'] >= 2
+            row['Dividend Yield - Common - Net - Issue - %, TTM'] >= 1.5
         ):
             # Điều kiện LINH HOẠT (chỉ cần 1 trong 2)
             score_conservative = sum([
