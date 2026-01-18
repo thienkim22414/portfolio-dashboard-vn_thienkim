@@ -114,7 +114,7 @@ def classify(row):
     # phù hợp với nhà đầu tư muốn cân bằng giữa tăng trưởng và ổn định mà không bị giới hạn bởi ngành cụ thể.
     score_balanced = sum([
         row['ROE'] > 12,
-        0.8 <= row['Beta 5 Year'] <= 1.4,
+        0.8 <= row['Beta 5 Year'] <= 1.2,
         row['Dividend Yield - Common - Net - Issue - %, TTM'] > 1.0,
         row['P/E'] > 12
     ])
