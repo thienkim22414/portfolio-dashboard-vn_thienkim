@@ -107,11 +107,11 @@ def classify(row):
         ):
             # Điều kiện LINH HOẠT (chỉ cần thỏa mãn ít nhất 1 trong 3)
             score_flex = sum([
-                row['Beta 5 Year'] <= 0.8,
+                row['Beta 5 Year'] <= 1,
                 row['ROE'] >= 10,
                 12 <= row['P/E'] <= 18
             ])
-            if score_flex >= 2:
+            if score_flex >= 3:
                 return "Bảo thủ"
     
     # ===== 3️⃣ CÂN BẰNG =====
