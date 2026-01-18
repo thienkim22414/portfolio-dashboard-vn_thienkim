@@ -107,8 +107,8 @@ def classify(row):
         ):
             # Điều kiện LINH HOẠT (chỉ cần thỏa mãn ít nhất 1 trong 3)
             score_flex = sum([
-                row['Beta 5 Year'] <= 1.0,
-                row['ROE'] >= 10,
+                row['Beta 5 Year'] <= 0.9,
+                row['ROE'] >= 12,
                 10 <= row['P/E'] <= 20
             ])
             if score_flex >= 2:
