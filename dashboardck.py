@@ -102,7 +102,7 @@ def classify(row):
         # Điều kiện BẮT BUỘC (cả 3 phải thỏa mãn đồng thời)
         if (
             row['Company Market Capitalization'] >= 25_000_000_000_000 and
-            row['Dividend Yield - Common - Net - Issue - %, TTM'] >= 1.5 and
+            row['Dividend Yield - Common - Net - Issue - %, TTM'] >= 1.2 and
             row['Beta 5 Year'] <= 1.0
         ):
             return "Bảo thủ"
