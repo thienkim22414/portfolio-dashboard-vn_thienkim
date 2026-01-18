@@ -192,7 +192,7 @@ st.sidebar.success("Risk-free rate VN (TPCP 10 năm): 4.18% (dữ liệu 30/12/2
 # Giao diện
 st.title("🎯 Bảng Điều Khiển Danh Mục Đầu Tư Tối Ưu (Bluechip VN)")
 
-khau_vi = st.sidebar.selectbox("Chọn khẩu vị rủi ro", ["Bảo thủ", "Cân bằng", "Tích cực"])
+khau_vi = st.sidebar.selectbox("Phong cách đầu tư", ["Bảo thủ", "Cân bằng", "Tăng trưởng"])
 
 filtered = fund_df[fund_df['Khau_Vi_Rui_Ro'] == khau_vi].set_index('Symbol')
 
