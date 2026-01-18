@@ -243,12 +243,54 @@ else:
         fig_corr.update_layout(title="Ma trận tương quan log-return", height=600, xaxis_title="Cổ phiếu", yaxis_title="Cổ phiếu", xaxis=dict(tickangle=45))
         st.plotly_chart(fig_corr, use_container_width=True)
 
-        st.markdown("<h2 style='color: #d62728;'>Lợi nhuận tích lũy danh mục</h2>", unsafe_allow_html=True)
-        portfolio_cumulative = (log_returns_query + 1).cumprod().dot(optimal_weights)
-        fig = go.Figure()
-        fig.add_trace(go.Scatter(x=portfolio_cumulative.index, y=portfolio_cumulative, name="Danh mục tối ưu", line=dict(color="#1f77b4", width=2.5)))
-        fig.update_layout(title="Lợi nhuận tích lũy danh mục tối ưu", xaxis_title="Ngày", yaxis_title="Lợi nhuận tích lũy", height=500)
-        st.plotly_chart(fig, use_container_width=True)
+        st.markdown("<h2 style='color: #d62728;'>Lợi nhuận tích lũy: Danh mục vs Benchmark</h2>", unsafe_allow_html=True)
+
+# Cumulative return danh mục
+portfolio_cum = (log_returns_query + 1).cumprod().dot(optimal_weights)
+
+fig = go.Figure()
+fig.add_trace(go.Scatter(
+    x=portfolio_cum.index, 
+    y=portfolio_cum, 
+    name="Danh mục tối ưu",
+    line=dict(width=3)
+))
+
+# --- Hàm load cumulative benchmark ---
+def load_benchmark_cum(file):
+    df = pd.read_csv(file, quoting=1, quotechar='"', doublequote=True)
+    df['Ngày'] = pd.to_datetime(df['Ngày'], format='%d/%m/%Y')
+    df = df.sort_values('Ngày')
+    df['Close'] = pd.to_numeric(df['Lần cuối'].str.replace(',', ''))
+    log_r = np.log(df['Close'] / df['Close'].shift(1)).dropna()
+    return (log_r + 1).cumprod()
+
+benchmark_files = {
+    "VN-Index": "Dữ liệu Lịch sử VN Index.csv",
+    "VN30": "Dữ liệu Lịch sử VN 30.csv",
+    "VN100": "Dữ liệu Lịch sử VN100.csv"
+}
+
+for name, file in benchmark_files.items():
+    try:
+        cum_bm = load_benchmark_cum(file)
+        fig.add_trace(go.Scatter(
+            x=cum_bm.index, 
+            y=cum_bm, 
+            name=name,
+            line=dict(dash="dash")
+        ))
+    except:
+        pass
+
+fig.update_layout(
+    title="Cumulative Returns: Portfolio vs Benchmark",
+    xaxis_title="Ngày",
+    yaxis_title="Lợi nhuận tích lũy",
+    height=550
+)
+st.plotly_chart(fig, use_container_width=True)
+
 
         # So sánh benchmark
         st.markdown("<h2 style='color: #ff7f0e;'>So sánh với Benchmark (2020-2025)</h2>", unsafe_allow_html=True)
