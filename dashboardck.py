@@ -94,7 +94,7 @@ def classify(row):
             row['Beta 5 Year'] >= 1.0,
             row['P/E'] >= 18
         ])
-        if score_aggressive >= 2:
+        if score_aggressive >= 1:
             return "Tích cực"
    
     # ===== 2️⃣ BẢO THỦ =====
