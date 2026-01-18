@@ -96,7 +96,7 @@ def classify(row):
         #])
         #if score_aggressive >= 2:
             #return "Tăng trưởng"
-   if industry in aggressive:
+    if industry in aggressive:
         # Điều kiện bắt buộc
         if row['ROE'] > 15:
             # Chỉ cần 1 trong 2
