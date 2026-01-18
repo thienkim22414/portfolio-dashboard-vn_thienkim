@@ -118,7 +118,7 @@ def classify(row):
         row['Dividend Yield - Common - Net - Issue - %, TTM'] > 1.0,
         row['P/E'] > 12
     ])
-    if score_balanced >= 2:
+    if score_balanced >= 3:
         return "Cân bằng"
    
     return "Khác"
