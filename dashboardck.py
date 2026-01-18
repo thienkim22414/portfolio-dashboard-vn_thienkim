@@ -99,13 +99,20 @@ def classify(row):
     
     # ===== 2️⃣ BẢO THỦ =====
     if industry in conservative:
-        # Điều kiện BẮT BUỘC (cả 3 phải thỏa mãn đồng thời)
+        # Điều kiện BẮT BUỘC (phải thỏa mãn đồng thời cả 3)
         if (
             row['Company Market Capitalization'] >= 25_000_000_000_000 and
-            row['Dividend Yield - Common - Net - Issue - %, TTM'] >= 1.2 and
-            row['Beta 5 Year'] <= 1.0
+            row['Dividend Yield - Common - Net - Issue - %, TTM'] >= 1.5 and
+            industry in conservative  # Đảm bảo ngành phòng thủ (đã có trong if, nhưng giữ để rõ ràng)
         ):
-            return "Bảo thủ"
+            # Điều kiện LINH HOẠT (chỉ cần thỏa mãn ít nhất 1 trong 3)
+            score_flex = sum([
+                row['Beta 5 Year'] <= 1.0,
+                row['ROE'] >= 10,
+                10 <= row['P/E'] <= 20
+            ])
+            if score_flex >= 2:
+                return "Bảo thủ"
     
     # ===== 3️⃣ CÂN BẰNG =====
     # Không áp đặt ràng buộc theo ngành (khác với hai phong cách còn lại).
